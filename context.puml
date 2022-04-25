@@ -1,0 +1,27 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+System(crm, "CRM", "Sistema responsável pelo controle de clientes, fornecedores, produtos, serviços e vendas")
+System(lms, "LMS", "Sistema responsável pelo gerenciamento de conteúdo e acesso aos cursos")
+System(erp, "ERP", "Sistema responsável pelo controle de dados internos, como vendas, funcionários, departamento.")
+System(checkout, "Checkout", "Sistema responsável pelo controle de pedidos e pagamentos")
+System(p1, "Produto 01", "Produto de Cursos de Formação 1, LP, aplicativos, SPA, BFF e etc")
+System(p2, "Produto 02", "Produto de Cursos de Formação 2, LP, aplicativos, SPA, BFF e etc")
+System_Ext(paymentGateway, "Payment Gateway", "Sistema responsável pelo processamento de pagamentos")
+
+
+
+' Relacionamento internos
+Rel(crm, lms, "Registra e gerencia o acesso de alunos, professores e funcionários aos cursos e sistemas.")
+Rel_L(crm, erp, "Registra vendas, compras e pagamentos.")
+Rel(checkout, crm, "Informa novos pedidos ao sistema de controle de clientes.")
+Rel_L(p1, lms, "Busca e gerencia o acesso aos cursos de formação 1.")
+Rel_L(p2, lms, "Busca e gerencia o acesso aos cursos de formação 2.")
+
+Rel(p1, checkout, "Envia pedidos.")
+Rel(p2, checkout, "Envia pedidos.")
+
+' Relacionamentos Externos
+Rel(checkout, paymentGateway, "Registra e obtém informações de pagamentos.")
+
+@enduml
