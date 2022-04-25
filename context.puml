@@ -24,4 +24,5 @@ Rel(p2, checkout, "Envia pedidos.")
 ' Relacionamentos Externos
 Rel(checkout, paymentGateway, "Registra e obtém informações de pagamentos.")
 
+SHOW_LEGEND()
 @enduml

@@ -1,0 +1,77 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
+!include DEVICONS/nodejs.puml
+!include DEVICONS/postgresql.puml
+!include DEVICONS/aws.puml
+
+System(crm, "CRM", "Sistema responsável pelo controle de clientes, fornecedores, produtos, serviços e vendas")
+
+Person(professor, "Professor", "Professor de um ou mais cursos")
+Person(coordenador, "Coordenador", "Coordenador de um ou mais cursos")
+
+System_Boundary(lms, "LMS"){
+  Container(auth, "Authorization Service", "API REST | gRPC | Frontend", "Sistema responsável pela segurança, permissionamento e autenticação de usuários", $sprite="nodejs")
+  ContainerDb(authDb, "Auth DB", "PostgreSQL", "Banco de dados responsável pelo armazenamento de usuários, perfis e permissões", $sprite="postgresql")
+  
+  Container(courses, "Courses Service", "API REST", "Sistema responsável pelo controle de cursos, módulos e vídeos")
+  ContainerDb_Ext(storage, "Storage", "S3", "Armazenamento de videos do curso", $sprite="aws")
+  ContainerDb(coursesDb, "Courses DB", "MongoDb", "Banco de dados responsável pelo armazenamento de cursos, módulos e vídeos")
+
+  Container(encoder, "Encoder", "Go Lang", "Sistema responsável pelo encoder de vídeos")
+  ContainerDb(encoderDb, "Encoder DB", "MongoDb", "Banco de dados responsável pelo armazenamento de vídeos")
+  
+  ContainerQueue(encoderQueue, "Kafka", "Topic: Encoder videos", "Video para serem encodados")
+  ContainerQueue(videoProcess, "Kafka", "Topic: Videos Processados", "Videos processados e disponiveis para exibição")
+
+  Container(exercicios, "Exercicios Service", "API REST", "Sistema responsável pelo controle de exercicios")
+  ContainerDb(exerciciosDb, "Exercicios DB", "MongoDb", "Banco de dados responsável pelo armazenamento de exercicios")
+
+  Container(progress, "Progress Service", "API REST", "Sistema responsável pelo controle de progresso de alunos em exercicios, videos, lives.")
+  ContainerDb(progressDb, "Progress DB", "MongoDb", "Banco de dados responsável pelo armazenamento de progresso de alunos em exercicios, videos, lives.")
+
+  Container(lives, "Lives Service", "API REST", "Sistema responsável pelo controle de lives")
+  ContainerDb(livesDb, "Lives DB", "SQL Server", "Banco de dados responsável pelo armazenamento de lives")
+
+  Container(frontProfessor, "Frotend Professor", "ReactJS", "Frontend responsável pelo controle de exercícios, lives, acompanhamento do aluno.")  
+
+  ' Relacionamentos personas
+  Rel(professor, frontProfessor, "Gerencia exercicios, lives e acompanha alunos no", "HTTPS")
+
+  ' Relacionamento front com services
+  Rel(frontProfessor, courses, "Consulta cursos via", "HTTPS/API REST")
+  Rel(frontProfessor, lives, "Registra e consulta cursos via", "HTTPS/API REST")
+  Rel(frontProfessor, exercicios, "Registra e consulta exercicios via", "HTTPS/API REST")
+  Rel(frontProfessor, progress, "Visualiza progresso dos alunos via", "HTTPS/API REST")
+
+  ' Relacionamentos internos
+  Rel(auth, authDb, "Persiste e consulta dados no")
+  Rel(courses, auth, "Valida aluno através de", "HTTPS / REST")
+  Rel(courses, coursesDb, "Persiste e consulta dados no")
+  
+  Rel(encoder, encoderDb, "Persiste e consulta dados no")
+  Rel(courses, encoderQueue, "Notifica novos videos a serem processados na")
+  Rel(encoder, encoderQueue, "Obtém videos a serem processados na")
+  Rel(encoder, videoProcess, "Notifica videos processados na")
+  Rel(courses, videoProcess, "Obtém videos disponíveis para exibição na")
+
+  Rel(exercicios, exerciciosDb, "Persiste e consulta dados no")
+  Rel(exercicios, auth, "Valida aluno, professor ou outra role através de", "HTTPS / REST")
+  
+  Rel(progress, progressDb, "Persiste e consulta dados no")
+  Rel(progress, auth, "Valida aluno através de", "HTTPS / REST")
+  ' Relacionamentos externos
+  Rel(courses, storage, "Armazena e recupera videos do curso via", "HTTPS")
+  Rel_U(encoder, storage, "Armazena videos processados e recupera videos a serem processados via", "HTTPS")
+
+  Rel(lives, livesDb, "Persiste e consulta dados no")
+  Rel(lives, auth, "Valida professor através de", "HTTPS / REST")
+}
+
+' Relacionamentos externos
+Rel(crm, auth, "Registra e gerencia usuários assincronamente no")
+
+
+SHOW_LEGEND()
+@enduml
